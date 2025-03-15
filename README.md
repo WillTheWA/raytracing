@@ -1,2 +1,26 @@
-# Project Overview
-This is an implementation of raytracing completed in C.
+# Exploration Overview
+This is an exploration into raytracing using C.
+
+## Compiling
+First ensure that both GCC and SDL are installed.
+
+Navigate to the directory where raytracing.c is stored.
+
+Run the following command to compile:
+
+```
+gcc raytracing.c -o raytracing `sdl2-config --cflags --libs` -lm
+```
+
+This should generate a raytracing executeable file.
+
+The executeable can be executed using:
+
+```
+./raytracing
+```
+
+## TODO:
+- Optimize Rays
+- Add 'Light' Refraction
+- Improve Visualization
