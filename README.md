@@ -1,2 +1,2 @@
-# raytracing
-Implementation of basic raytracing using c.
+# Project Overview
+This is an implementation of raytracing completed in C.
