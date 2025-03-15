@@ -14,7 +14,7 @@ gcc raytracing.c -o raytracing `sdl2-config --cflags --libs` -lm
 
 This should generate a raytracing executeable file.
 
-The executeable can be executed using:
+The program can be launched using the following command:
 
 ```
 ./raytracing
