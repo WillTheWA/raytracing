@@ -27,6 +27,11 @@ struct Ray {
 	double a;
 };
 
+struct CollisionPoint {
+	double x;
+	double y;
+};
+
 /*
  * Function to draw circle on the SDL surface
  * 
@@ -61,9 +66,57 @@ void generate_rays(struct Circle circle, struct Ray rays[RAYS_NUMBER]) {
 	}
 }
 
-// This method draw the rays based on their projection and angle
-void FillRays(SDL_Surface* surface, struct Ray rays[RAYS_NUMBER], Uint32 color, struct Circle object) {
+// Given a ray that collided with an object, draw that ray as a reflection
+void reflect_ray(SDL_Surface* surface, struct Ray ray, struct CollisionPoint collision, Uint32 color_r, struct Circle circle) {
+	// Set boundary flags
+	int end_of_screen = 0;
+		
+	// Use the object as a new ray caster for reflection
+	double step = 1;
+	double x_draw = collision.x;
+	double y_draw = collision.y;
 	
+	// Compute incident ray direction
+	double ray_x = cos(ray.a);
+	double ray_y = sin(ray.a);
+
+	// Compute normal vector at collision point
+	double norm_x = collision.x - circle.x;
+	double norm_y = collision.y - circle.y;
+	double norm_mag = sqrt(pow(norm_x, 2) + pow(norm_y, 2));
+
+	norm_x = norm_x / norm_mag;
+	norm_y = norm_y / norm_mag;
+
+	// Compute dot product
+	double dot_prod = (ray_x * norm_x) + (ray_y * norm_y);
+
+	// Reflection direction
+	double reflect_x = ray_x - 2 * dot_prod * norm_x; 
+	double reflect_y = ray_y - 2 * dot_prod * norm_y;
+       	double reflect_a = atan2(reflect_y, reflect_x);
+
+	// Only test edge of screen
+	while (!end_of_screen) {
+		// Ray direction + step	
+		x_draw += step * cos(reflect_a);
+		y_draw += step * sin(reflect_a);
+
+		SDL_Rect ray_point = (SDL_Rect) {x_draw, y_draw, RAY_THICKNESS, RAY_THICKNESS};	
+		SDL_FillRect(surface, &ray_point, color_r);
+			
+		// Check screen boundary
+		if (x_draw < 0 || x_draw > WIDTH) {
+			end_of_screen = 1;
+		}
+		if (y_draw < 0 || y_draw > HEIGHT) {
+			end_of_screen = 1;
+		}
+	}
+}
+
+// This method draw the rays based on their projection and angle
+void FillRays(SDL_Surface* surface, struct Ray rays[RAYS_NUMBER], Uint32 color, struct Circle object) {	
 	double radius_squared = pow(object.r, 2);
 	for (int i = 0; i < RAYS_NUMBER; i++) {
 		struct Ray ray = rays[i];
@@ -91,9 +144,14 @@ void FillRays(SDL_Surface* surface, struct Ray rays[RAYS_NUMBER], Uint32 color, 
 			if (y_draw < 0 || y_draw > HEIGHT) {
 				end_of_screen = 1;
 			}
+			
 			// Check for object collision
 			double distance_squared = pow(x_draw - object.x, 2) + pow(y_draw - object.y, 2);
 			if (distance_squared < radius_squared) {
+				// Pass collision point and reflect if ray
+				struct CollisionPoint collision = {x_draw, y_draw};
+				//printf("Collided: x=%f y=%f", collision.x, collision.y);
+				reflect_ray(surface, ray, collision, RAY_COLOR, object);
 				break;
 			}
 		}
@@ -153,6 +211,6 @@ int main() {
 		}
 
 		SDL_UpdateWindowSurface(window);
-		SDL_Delay(7);
+		SDL_Delay(10);
 	}
 }
