@@ -1,5 +1,5 @@
 # Exploration Overview
-This is an exploration into raytracing using C.
+This is an exploration into raytracing using C. Raytracing has recently become a topic that I am very interested in, its one of those topic that I never thought I would be able to figure out until recently. While the base implementation provided in this repo is limited to a 2d plane, I still want to figure out both the optimal amount of rays and experiment with refraction. Feel free to test out the implementation provided and also please note that a lot of this comes from `HirschDaniel` and IS NOT original content.
 
 ## Compiling
 First ensure that both `GCC` and `SDL` are installed.
