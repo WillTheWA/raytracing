@@ -24,3 +24,6 @@ The program can be launched using the following command:
 - Optimize Rays
 - Add 'Light' Refraction
 - Improve Visualization
+
+## Credit
+This exploration was inspired and built on a coding project done by `HirschDaniel`. [This](https://youtu.be/2BLRLuczykM?si=3woeIgQ-pk0VzeCp) is the link to the specific video that I followed.
