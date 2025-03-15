@@ -2,7 +2,7 @@
 This is an exploration into raytracing using C.
 
 ## Compiling
-First ensure that both GCC and SDL are installed.
+First ensure that both `GCC` and `SDL` are installed.
 
 Navigate to the directory where raytracing.c is stored.
 
