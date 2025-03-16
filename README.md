@@ -22,6 +22,8 @@ The program can be launched using the following command:
 ./raytracing
 ```
 
+I'll add a makefile eventually lol.
+
 ## TODO:
 - Add Ray Number Slider
 - Add Other Shapes
