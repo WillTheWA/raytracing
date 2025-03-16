@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <SDL2/SDL.h>
 #include <math.h>
+#include <stdlib.h>
 
 #define WIDTH 900
 #define HEIGHT 600
@@ -10,6 +11,8 @@
 #define RAY_THICKNESS 3
 #define RAY_COLOR 0xffd43b
 #define OBJECT_SPEED 2
+#define DARKEN_RATE 2
+#define INTIAL_CAP 10
 
 // Custom struct for a circle
 struct Circle {
@@ -31,6 +34,16 @@ struct CollisionPoint {
 	double x;
 	double y;
 };
+
+struct RaySegment {
+	SDL_Rect rect;
+	Uint32 color;
+};
+
+// Dyn array vars
+struct RaySegment *ray_segments = NULL;
+size_t segment_count = 0;
+size_t segment_capacity = 0;
 
 /*
  * Function to draw circle on the SDL surface
@@ -66,10 +79,64 @@ void generate_rays(struct Circle circle, struct Ray rays[RAYS_NUMBER]) {
 	}
 }
 
+// We want to change the color of the rays as they get further from the source
+// The format for a hex color is 32-bit integer 0xRRGGBB
+unsigned int darken_color(unsigned int color, int amount) {
+	// Extract the color components by shifting bits
+	unsigned int r = (color >> 16) & 0xFF;
+	unsigned int g = (color >> 8) & 0xFF;
+	unsigned int b = (color) & 0xFF;
+
+	// Darken each RGB component
+	// CLAMP TO PREVENT OVERFLOW
+	r = (r > amount) ? (r - amount) : 0;
+	g = (g > amount) ? (g - amount) : 0;
+	b = (b > amount) ? (b - amount) : 0;
+	
+	// Combine values into color
+	unsigned int new_color = (r << 16) | (g << 8) | b;	
+
+	return new_color;
+}
+
+// Function for adding ray segment for drawing later
+void add_segment(SDL_Rect rect, Uint32 color) {
+	if (segment_count >= segment_capacity) {
+		size_t new_capacity = (segment_capacity == 0) ? INTIAL_CAP : segment_capacity * 2;
+		struct RaySegment *new_array = (struct RaySegment *)realloc(ray_segments, new_capacity * sizeof(struct RaySegment));
+
+		if (!new_array) {
+			printf("Error resizing array.\n");
+			exit(1);
+		}
+
+		ray_segments = new_array;
+		segment_capacity = new_capacity;
+	}
+
+	ray_segments[segment_count].rect = rect;
+	ray_segments[segment_count].color = color;
+	segment_count++;
+}
+
+// Simple cleanup
+void cleanup() {
+	free(ray_segments);
+}
+
+// Function to clear the array of rays
+void clear_rays() {
+	free(ray_segments);
+	ray_segments = NULL;
+	segment_count = 0;
+	segment_capacity = 0;
+}
+
 // Given a ray that collided with an object, draw that ray as a reflection
 void reflect_ray(SDL_Surface* surface, struct Ray ray, struct CollisionPoint collision, Uint32 color_r, struct Circle circle) {
-	// Set boundary flags
+	// Set draw flags
 	int end_of_screen = 0;
+	int dead_ray = 0;
 		
 	// Use the object as a new ray caster for reflection
 	double step = 1;
@@ -97,13 +164,24 @@ void reflect_ray(SDL_Surface* surface, struct Ray ray, struct CollisionPoint col
        	double reflect_a = atan2(reflect_y, reflect_x);
 
 	// Only test edge of screen
-	while (!end_of_screen) {
+	// Include darkening effect
+	Uint32 new_color = color_r;
+	int darken_counter = 0;
+	while (!end_of_screen && !dead_ray) {
+		// Darkening code
+		if (darken_counter < DARKEN_RATE)
+			darken_counter += 1;
+		else {
+			new_color = darken_color(new_color, 1);
+			darken_counter = 0;
+		}
+
 		// Ray direction + step	
 		x_draw += step * cos(reflect_a);
 		y_draw += step * sin(reflect_a);
 
 		SDL_Rect ray_point = (SDL_Rect) {x_draw, y_draw, RAY_THICKNESS, RAY_THICKNESS};	
-		SDL_FillRect(surface, &ray_point, color_r);
+		SDL_FillRect(surface, &ray_point, new_color);
 			
 		// Check screen boundary
 		if (x_draw < 0 || x_draw > WIDTH) {
@@ -111,6 +189,11 @@ void reflect_ray(SDL_Surface* surface, struct Ray ray, struct CollisionPoint col
 		}
 		if (y_draw < 0 || y_draw > HEIGHT) {
 			end_of_screen = 1;
+		}
+
+		// Check if a ray doesn't need to be rendered
+		if (new_color == 0x000000) {
+			dead_ray = 1;
 		}
 	}
 }
@@ -121,22 +204,34 @@ void FillRays(SDL_Surface* surface, struct Ray rays[RAYS_NUMBER], Uint32 color, 
 	for (int i = 0; i < RAYS_NUMBER; i++) {
 		struct Ray ray = rays[i];
 		
-		// Set boundary flags
+		// Set draw flags
 		int end_of_screen = 0;
 		int object_hit = 0;
-		
+		int dead_ray = 0;
+
 		// Draw the ray
 		double step = 1;
 		double x_draw = ray.x_s;
 		double y_draw = ray.y_s;
-		while (!end_of_screen && !object_hit) {
+		Uint32 new_color = color;
+		int darken_counter = 0;
+		while (!end_of_screen && !object_hit && !dead_ray) {	
 			
+			// Darkening color code
+			if (darken_counter < DARKEN_RATE)
+				darken_counter += 1;
+			else {
+				new_color = darken_color(new_color, 1);
+				darken_counter = 0;
+			}
+
 			x_draw += step * cos(ray.a);
 			y_draw += step * sin(ray.a);
-			
+		
 			SDL_Rect ray_point = (SDL_Rect) {x_draw, y_draw, RAY_THICKNESS, RAY_THICKNESS};
-			SDL_FillRect(surface, &ray_point, color);
-			
+			add_segment(ray_point, new_color);
+			//SDL_FillRect(surface, &ray_point, new_color);
+
 			// Check screen boundary
 			if (x_draw < 0 || x_draw > WIDTH) {
 				end_of_screen = 1;
@@ -144,20 +239,28 @@ void FillRays(SDL_Surface* surface, struct Ray rays[RAYS_NUMBER], Uint32 color, 
 			if (y_draw < 0 || y_draw > HEIGHT) {
 				end_of_screen = 1;
 			}
+
+			// Check if a ray doesn't need to be rendered
+			if (new_color == 0x000000) {
+				dead_ray = 1;
+			}
 			
 			// Check for object collision
 			double distance_squared = pow(x_draw - object.x, 2) + pow(y_draw - object.y, 2);
 			if (distance_squared < radius_squared) {
 				// Pass collision point and reflect if ray
 				struct CollisionPoint collision = {x_draw, y_draw};
-				//printf("Collided: x=%f y=%f", collision.x, collision.y);
-				reflect_ray(surface, ray, collision, RAY_COLOR, object);
+				reflect_ray(surface, ray, collision, new_color, object);
 				break;
 			}
 		}
 	}
+	for (size_t i = 0; i < segment_count; i++) {
+		SDL_FillRect(surface, &ray_segments[i].rect, ray_segments[i].color);
+	}
 }
 
+// Program entrypoint :)
 int main() {
 	// Initialize the SDL and create window
 	SDL_Init(SDL_INIT_VIDEO);
@@ -184,6 +287,7 @@ int main() {
 		while(SDL_PollEvent(&event)) {
 			if (event.type == SDL_QUIT) {
 				simulation_running = 0;
+				cleanup();
 			}
 			if (event.type == SDL_MOUSEMOTION && event.motion.state != 0) {
 				circle1.x = event.motion.x;
@@ -212,5 +316,7 @@ int main() {
 
 		SDL_UpdateWindowSurface(window);
 		SDL_Delay(10);
+
+		clear_rays();
 	}
 }
