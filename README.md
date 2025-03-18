@@ -5,7 +5,7 @@ This includes some basic features such as starting with 1000 rays from a small c
 
 ## Controls
 
-There are variable amounts of rays that can be casted, simply press `z` to remove 10 rays and press `x` to add 10 rays. The current upper limit is 10,000 rays, this is specified in as the `RAY_MAX` variable. The lower limit is 10 due to a memory issue. 
+There are variable amounts of rays that can be casted, simply press `z` to remove 10 rays and press `x` to add 10 rays. The current upper limit is 10,000 rays, this is specified in as the `RAY_MAX` variable. The lower limit is 0. 
 
 ## Compiling
 First ensure that both `GCC` and `SDL` are installed.
