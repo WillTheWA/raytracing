@@ -15,7 +15,7 @@ Navigate to the directory where `raytracing.c` is stored.
 Run the following command to compile the file:
 
 ```
-gcc raytracing.c -o raytracing `sdl2-config --cflags --libs` -lm
+make
 ```
 
 This should generate a raytracing executeable file.
@@ -25,8 +25,6 @@ The program can be launched using the following command:
 ```
 ./raytracing
 ```
-
-I'll add a makefile eventually lol.
 
 ## TODO:
 - Add Forking For Ray Generation
