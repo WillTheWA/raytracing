@@ -2,17 +2,19 @@
 #include <SDL2/SDL.h>
 #include <math.h>
 #include <stdlib.h>
+#include <string.h>
 
-#define WIDTH 900
-#define HEIGHT 600
+#define WIDTH 1000
+#define HEIGHT 650
 #define COLOR_WHITE 0xffffffff
 #define COLOR_BLACK 0x00000000
-#define RAYS_NUMBER 1000
+#define RAY_START 1000
+#define RAY_MAX 10000
 #define RAY_THICKNESS 3
 #define RAY_COLOR 0xffd43b
 #define OBJECT_SPEED 2
 #define DARKEN_RATE 2
-#define INTIAL_CAP 10
+#define INITIAL_CAP 10
 
 // Custom struct for a circle
 struct Circle {
@@ -22,12 +24,9 @@ struct Circle {
 };
 
 struct Ray {
-	// Starting pos
-	double x_s;
-	double y_s;
-	
-	// Angle
-	double a;
+	double x_s;	// Starting x
+	double y_s;	// Starting y
+	double a;	// Angle
 };
 
 struct CollisionPoint {
@@ -70,10 +69,33 @@ void FillCircle(SDL_Surface* surface, struct Circle circle, Uint32 color) {
 	}
 }
 
+// Create a dynamic array of the rays
+struct Ray* create_dynarray(int size) {
+	struct Ray* new_arr = malloc(size * sizeof(struct Ray));
+
+	if (new_arr == NULL) {
+		printf("Memory allocaition failure\n");
+		return NULL;
+	}
+
+	return new_arr;
+}
+
+// Resize the array of rays (either increase or decrease
+struct Ray* resize_dynarray(struct Ray* old_arr, int newsize) {
+	struct Ray* new_arr = realloc(old_arr, newsize * sizeof(struct Ray));
+	if (new_arr == NULL) {
+		printf("Memory reallocation failed\n");
+		return old_arr;
+	}
+	return new_arr;
+}
+
 // This is the method used to generate the array of rays for RAYS_NUMBER
-void generate_rays(struct Circle circle, struct Ray rays[RAYS_NUMBER]) {
-	for (int i = 0; i < RAYS_NUMBER; i++) {
-		double angle = ((double) i / RAYS_NUMBER) * 2 * M_PI;
+// I want this to generate and return a dynarray to be used for the rays each time
+void generate_rays(struct Circle circle, struct Ray* rays, int ray_count) {
+	for (int i = 0; i < ray_count; i++) {
+		double angle = ((double) i / ray_count) * 2 * M_PI;
 		struct Ray ray = {circle.x, circle.y, angle};
 		rays[i] = ray;
 	}
@@ -102,7 +124,7 @@ unsigned int darken_color(unsigned int color, int amount) {
 // Function for adding ray segment for drawing later
 void add_segment(SDL_Rect rect, Uint32 color) {
 	if (segment_count >= segment_capacity) {
-		size_t new_capacity = (segment_capacity == 0) ? INTIAL_CAP : segment_capacity * 2;
+		size_t new_capacity = (segment_capacity == 0) ? INITIAL_CAP : segment_capacity * 2;
 		struct RaySegment *new_array = (struct RaySegment *)realloc(ray_segments, new_capacity * sizeof(struct RaySegment));
 
 		if (!new_array) {
@@ -117,11 +139,6 @@ void add_segment(SDL_Rect rect, Uint32 color) {
 	ray_segments[segment_count].rect = rect;
 	ray_segments[segment_count].color = color;
 	segment_count++;
-}
-
-// Simple cleanup
-void cleanup() {
-	free(ray_segments);
 }
 
 // Function to clear the array of rays
@@ -199,11 +216,14 @@ void reflect_ray(SDL_Surface* surface, struct Ray ray, struct CollisionPoint col
 }
 
 // This method draw the rays based on their projection and angle
-void FillRays(SDL_Surface* surface, struct Ray rays[RAYS_NUMBER], Uint32 color, struct Circle object) {	
+void FillRays(SDL_Surface* surface, struct Ray* rays, Uint32 color, struct Circle object, int ray_count) {	
 	double radius_squared = pow(object.r, 2);
-	for (int i = 0; i < RAYS_NUMBER; i++) {
+	for (int i = 0; i < ray_count; i++) {
 		struct Ray ray = rays[i];
 		
+		if (ray.x_s == -1 && ray.y_s == -1)
+			break;
+
 		// Set draw flags
 		int end_of_screen = 0;
 		int object_hit = 0;
@@ -230,7 +250,6 @@ void FillRays(SDL_Surface* surface, struct Ray rays[RAYS_NUMBER], Uint32 color, 
 		
 			SDL_Rect ray_point = (SDL_Rect) {x_draw, y_draw, RAY_THICKNESS, RAY_THICKNESS};
 			add_segment(ray_point, new_color);
-			//SDL_FillRect(surface, &ray_point, new_color);
 
 			// Check screen boundary
 			if (x_draw < 0 || x_draw > WIDTH) {
@@ -274,25 +293,45 @@ int main() {
 	struct Circle circle1 = {200, 200, 30};
 	struct Circle circle2 = {650, 200, 100};
 
-	// Generate the rays
-	struct Ray rays[RAYS_NUMBER];
-	generate_rays(circle1, rays);
+	// Set var for variable number of rays start at RAYS_NUMBER;
+	int ray_count = RAY_START;
+	struct Ray* rays = create_dynarray(ray_count);
+	generate_rays(circle1, rays, ray_count);
 
 	// Animation Loop
 	double object_speed_y = OBJECT_SPEED;
 	int simulation_running = 1;
 	SDL_Event event;
-	while(simulation_running) {
+	while(simulation_running) {	
 		// Check for window closed
 		while(SDL_PollEvent(&event)) {
+			// Check if quit
 			if (event.type == SDL_QUIT) {
 				simulation_running = 0;
-				cleanup();
+				clear_rays();
+				free(rays);
 			}
+			// Check if mouse moved
 			if (event.type == SDL_MOUSEMOTION && event.motion.state != 0) {
 				circle1.x = event.motion.x;
 				circle1.y = event.motion.y;
-				generate_rays(circle1, rays);
+				generate_rays(circle1, rays, ray_count);
+			}
+			// Check if ray number altered and keep within bounds
+			if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_x ) {
+				if (ray_count + 10 <= RAY_MAX) {
+					ray_count += 10;
+					rays = resize_dynarray(rays, ray_count);
+					generate_rays(circle1, rays, ray_count);
+				}
+			}
+			// REALLOC SIZE CANNOT BE 0
+			if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_z ) {
+				if (ray_count - 10 > 0) {
+					ray_count -= 10;
+					rays = resize_dynarray(rays, ray_count);
+					generate_rays(circle1, rays, ray_count);
+				}
 			}
 		}
 		// Redraw a black screen to avoid mulitple circles when moving
@@ -300,7 +339,7 @@ int main() {
 		
 		// Draw the rays projected from circle1
 		// Pass circle2 as obstacle
-		FillRays(surface, rays, RAY_COLOR, circle2);
+		FillRays(surface, rays, RAY_COLOR, circle2, ray_count);
 		
 		// Redraw both circles above the rays
 		FillCircle(surface, circle1, COLOR_WHITE);
