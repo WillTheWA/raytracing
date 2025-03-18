@@ -29,14 +29,12 @@ The program can be launched using the following command:
 I'll add a makefile eventually lol.
 
 ## TODO:
-- Fix Variable Ray Lower Bound
 - Add Forking For Ray Generation
 - Add Other Shapes
 
 ## Known Issues
 
-### Variable Rays
-- There is an issue with the lower bound. When the number of rays is changed (using `z` and `x`) the `rays` array is resized to the size of the `ray_count` variable. This resizing operation is performed using a `realloc` call on the `rays` array. When the `ray_count` is set to 0, the operation fails (duh). This needs to be addressed so that there can be 0 rays.
+[NONE]
 
 ## Credit
 This exploration was inspired and built on a coding project done by `HirschDaniel`. [This](https://youtu.be/2BLRLuczykM?si=3woeIgQ-pk0VzeCp) is the link to the specific video that I followed.
