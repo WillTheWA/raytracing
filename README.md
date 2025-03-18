@@ -1,7 +1,9 @@
 # Exploration Overview
 This is an exploration into raytracing using C. Raytracing has recently become a topic that I am very interested in, as its one of those topic that I never thought I would be able to understand. While the base implementation provided in this repo is limited to a 2d plane, I still want to figure out the optimal amount of rays and experiment with refraction. Feel free to test out the implementation provided and please note that a lot of this comes from `HirschDaniel`.
 
-This includes some basic features such as 1000 rays from a small circle being emitted into a space with a larger circle which serves as the collision object. These rays also mimic light where it dissipates over time. The light rays also reflect off of the larger circle without overriding the previous light rays (which is pretty cool).
+This includes some basic features such as starting with 1000 rays from a small circle being emitted into a space with a larger circle which serves as the collision object. These rays also mimic light where it dissipates over time. The light rays also reflect off of the larger circle without overriding the previous light rays (which is pretty cool). 
+
+There are variable amounts of rays that can be casted, simply press `z` to remove 10 rays and press `x` to add 10 rays.
 
 ## Compiling
 First ensure that both `GCC` and `SDL` are installed.
@@ -25,8 +27,13 @@ The program can be launched using the following command:
 I'll add a makefile eventually lol.
 
 ## TODO:
-- Add Ray Number Slider
+- FIX VARIABLE RAYS
 - Add Other Shapes
+
+## Known Issues
+
+### Variable Rays
+- There is an issue with the variable rays. The rays are stored in the beginning using a single static array, meaning that it can only hold the number of rays that it was initalized at. This introduces an issue where as the number of rays decreases, the rays that are 'removed' are still be drawn, just not in a way that you can visually tell (except for the poor framerate).
 
 ## Credit
 This exploration was inspired and built on a coding project done by `HirschDaniel`. [This](https://youtu.be/2BLRLuczykM?si=3woeIgQ-pk0VzeCp) is the link to the specific video that I followed.
