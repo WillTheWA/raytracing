@@ -36,7 +36,7 @@ I'll add a makefile eventually lol.
 ## Known Issues
 
 ### Variable Rays
-- There is an issue with the variable rays. The rays are stored in the beginning using a single static array, meaning that it can only hold the number of rays that it was initalized at. This introduces an issue where as the number of rays decreases, the rays that are 'removed' are still be drawn, just not in a way that you can visually tell (except for the poor framerate).
+- There is an issue with the lower bound. When the number of rays is changed (using `z` and `x`) the `rays` array is resized to the size of the `ray_count` variable. This resizing operation is performed using a `realloc` call on the `rays` array. When the `ray_count` is set to 0, the operation fails (duh). This needs to be addressed so that there can be 0 rays.
 
 ## Credit
 This exploration was inspired and built on a coding project done by `HirschDaniel`. [This](https://youtu.be/2BLRLuczykM?si=3woeIgQ-pk0VzeCp) is the link to the specific video that I followed.
