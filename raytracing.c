@@ -217,13 +217,14 @@ void reflect_ray(SDL_Surface* surface, struct Ray ray, struct CollisionPoint col
 
 // This method draw the rays based on their projection and angle
 void FillRays(SDL_Surface* surface, struct Ray* rays, Uint32 color, struct Circle object, int ray_count) {	
+	// If there are no rays, then don't fill or generate any
+	if (ray_count == 0)
+		return;
+
 	double radius_squared = pow(object.r, 2);
 	for (int i = 0; i < ray_count; i++) {
 		struct Ray ray = rays[i];
 		
-		if (ray.x_s == -1 && ray.y_s == -1)
-			break;
-
 		// Set draw flags
 		int end_of_screen = 0;
 		int object_hit = 0;
@@ -327,9 +328,12 @@ int main() {
 			}
 			// REALLOC SIZE CANNOT BE 0
 			if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_z ) {
-				if (ray_count - 10 > 0) {
+				if (ray_count - 10 >= 10) {
 					ray_count -= 10;
 					rays = resize_dynarray(rays, ray_count);
+					generate_rays(circle1, rays, ray_count);
+				} else if (ray_count - 10 >= 0) {
+					ray_count -= 10;
 					generate_rays(circle1, rays, ray_count);
 				}
 			}
