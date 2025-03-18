@@ -3,6 +3,8 @@ This is an exploration into raytracing using C. Raytracing has recently become a
 
 This includes some basic features such as starting with 1000 rays from a small circle being emitted into a space with a larger circle which serves as the collision object. These rays also mimic light where it dissipates over time. The light rays also reflect off of the larger circle without overriding the previous light rays (which is pretty cool). 
 
+## Controls
+
 There are variable amounts of rays that can be casted, simply press `z` to remove 10 rays and press `x` to add 10 rays.
 
 ## Compiling
@@ -27,7 +29,7 @@ The program can be launched using the following command:
 I'll add a makefile eventually lol.
 
 ## TODO:
-- FIX VARIABLE RAYS
+- Add Forking For Ray Generation
 - Add Other Shapes
 
 ## Known Issues
