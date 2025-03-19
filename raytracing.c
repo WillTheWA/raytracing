@@ -218,7 +218,7 @@ void reflect_ray(SDL_Surface* surface, struct Ray ray, struct CollisionPoint col
 	}
 }
 
-// This method draw the rays based on their projection and angle
+// Create and draw the rays
 void FillRays(SDL_Surface* surface, struct Ray* rays, Uint32 color, struct Circle object, int ray_count) {	
 	// If there are no rays, then don't fill or generate any
 	if (ray_count == 0)
@@ -231,10 +231,12 @@ void FillRays(SDL_Surface* surface, struct Ray* rays, Uint32 color, struct Circl
 	for (int i = 0; i < ray_count; i++) {
 		pid_t pid = fork();
 
-		if (pid < 0)
+		if (pid < 0) {
 			printf("Fork Failed\n");
+			exit(1);  // Exit on fork failure
+		}
 
-		if (pid == 0) {
+		if (pid == 0) { // Child process
 			struct Ray ray = rays[i];
 		
 			// Set draw flags
@@ -248,8 +250,8 @@ void FillRays(SDL_Surface* surface, struct Ray* rays, Uint32 color, struct Circl
 			double y_draw = ray.y_s;
 			Uint32 new_color = color;
 			int darken_counter = 0;
+
 			while (!end_of_screen && !object_hit && !dead_ray) {	
-			
 				// Darkening color code
 				if (darken_counter < DARKEN_RATE)
 					darken_counter += 1;
@@ -265,18 +267,15 @@ void FillRays(SDL_Surface* surface, struct Ray* rays, Uint32 color, struct Circl
 				add_segment(ray_point, new_color);
 
 				// Check screen boundary
-				if (x_draw < 0 || x_draw > WIDTH) {
+				if (x_draw < 0 || x_draw > WIDTH || y_draw < 0 || y_draw > HEIGHT) {
 					end_of_screen = 1;
 				}
-				if (y_draw < 0 || y_draw > HEIGHT) {
-					end_of_screen = 1;
-				}
-	
+
 				// Check if a ray doesn't need to be rendered
 				if (new_color == 0x000000) {
 					dead_ray = 1;
 				}
-			
+
 				// Check for object collision
 				double distance_squared = pow(x_draw - object.x, 2) + pow(y_draw - object.y, 2);
 				if (distance_squared < radius_squared) {
@@ -286,14 +285,18 @@ void FillRays(SDL_Surface* surface, struct Ray* rays, Uint32 color, struct Circl
 					break;
 				}
 			}
+			_exit(0);  // Proper exit for child
 		}
-		else {
-			waitpid(pid, &status, 0);
-		}
+	}
 
-		for (size_t i = 0; i < segment_count; i++) {
-			SDL_FillRect(surface, &ray_segments[i].rect, ray_segments[i].color);
-		}
+	// Parent waits for all child processes
+	for (int i = 0; i < ray_count; i++) {
+		wait(&status);
+	}
+
+	// Parent draws segments after all children complete
+	for (size_t i = 0; i < segment_count; i++) {
+		SDL_FillRect(surface, &ray_segments[i].rect, ray_segments[i].color);
 	}
 }
 
