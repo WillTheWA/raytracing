@@ -27,7 +27,7 @@ The program can be launched using the following command:
 ```
 
 ## TODO:
-- Add Forking For Ray Generation
+- Add Forking For Ray Generation [150-250 rays/child]
 - Add Other Shapes
 
 ## Known Issues
