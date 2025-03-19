@@ -303,7 +303,13 @@ int main() {
 	double object_speed_y = OBJECT_SPEED;
 	int simulation_running = 1;
 	SDL_Event event;
+
+	Uint32 lastTime = SDL_GetTicks();
+	Uint32 frameCount = 0;
+
 	while(simulation_running) {	
+		Uint32 startTime = SDL_GetTicks();
+		
 		// Check for window closed
 		while(SDL_PollEvent(&event)) {
 			// Check if quit
@@ -348,7 +354,7 @@ int main() {
 		// Redraw both circles above the rays
 		FillCircle(surface, circle1, COLOR_WHITE);
 		FillCircle(surface, circle2, COLOR_WHITE);
-
+		
 		circle2.y += object_speed_y;
 		if (circle2.y - circle2.r < 0) {
 			object_speed_y = -object_speed_y;
@@ -358,7 +364,23 @@ int main() {
 		}
 
 		SDL_UpdateWindowSurface(window);
-		SDL_Delay(10);
+
+		// Update framecount
+		frameCount++;
+		Uint32 currentTime = SDL_GetTicks();
+    		if (currentTime - lastTime >= 1000) {
+        		printf("Ray Count: %d     FPS: %d\n", ray_count, frameCount);
+        		frameCount = 0;
+        		lastTime = currentTime;
+    		}
+
+    		// Cap framerate to 60 fps
+    		Uint32 frameTime = SDL_GetTicks() - startTime;
+    		
+		// 16 ms per frame (1000ms / 60fps)
+		if (frameTime < 16) {
+        		SDL_Delay(16 - frameTime);
+    		}
 
 		clear_rays();
 	}
