@@ -32,7 +32,8 @@ The program can be launched using the following command:
 
 ## Known Issues
 
-[NONE]
+### Forking
+Forking needs to be handled very carefully. Children need to just handle the processing, and the parent needs to handle drawing the rays. This could look like computing ray information for each ray or having each child calculate 1-10 rays. This would have to be done by investigating the frame rate drop off at certain ray counts.
 
 ## Credit
 This exploration was inspired and built on a coding project done by `HirschDaniel`. [This](https://youtu.be/2BLRLuczykM?si=3woeIgQ-pk0VzeCp) is the link to the specific video that I followed.
