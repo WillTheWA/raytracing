@@ -382,6 +382,7 @@ int main() {
         		SDL_Delay(16 - frameTime);
     		}
 
+		// Clear the rays
 		clear_rays();
 	}
 }
